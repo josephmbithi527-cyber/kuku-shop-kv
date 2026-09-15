@@ -1,22 +1,27 @@
-from flask import Flask, render_template, request, jsonify , send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, Response
 import json, os
 from datetime import datetime
 
 app = Flask(__name__)
+
 @app.route('/googleb174ec1f7734b91b.html')
 def google_verify():
     return 'google-site-verification: googleb174ec1f7734b91b.html'
 
 @app.route('/robots.txt')
 def robots():
-    return 'User-agent: *\nAllow: /\nSitemap: https://kuku-shop-kv.onrender.com/sitemap.xml'
+    txt = "User-agent: *\nAllow: /\nSitemap: https://kuku-shop-kv.onrender.com/sitemap.xml"
+    return Response(txt, mimetype='text/plain')
 
 @app.route('/sitemap.xml')
 def sitemap():
-    return '''<?xml version="1.0" encoding="UTF-8"?>
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>https://kuku-shop-kv.onrender.com/</loc></url>
-</urlset>''', 200, {'Content-Type': 'application/xml'}
+</urlset>"""
+    return Response(xml, mimetype='application/xml')
+
+ORDERS_FILE = 'orders.json'
 ORDERS_FILE = 'orders.json'
 
 def load_orders():
