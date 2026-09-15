@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kuku Shop KV</title>
+<style>
+body{margin:0;font-family:Arial;color:white;position:relative}
+#bgVideo{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+#overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);z-index:-1}
+.container{max-width:520px;margin:0 auto;padding:10px}
+.item{background:white;color:black;border-radius:12px;padding:12px;margin:12px 0;display:flex;gap:10px;align-items:center}
+.item img{width:80px;height:80px;border-radius:10px;object-fit:cover}
+button{background:#ff6600;color:white;border:none;padding:10px 15px;border-radius:8px;font-weight:bold;cursor:pointer}
+.deleteBtn{background:red;padding:5px 8px;margin-left:5px;font-size:12px}
+input,select{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:1px solid #ccc;box-sizing:border-box}
+#paySection{background:white;color:black;padding:15px;border-radius:12px;margin-top:15px}
+</style>
+</head>
+<body>
+<video autoplay muted loop playsinline id="bgVideo">
+  <source src="https://videos.pexels.com/video-files/2620043/2620043-hd_1920_1080_25fps.mp4" type="video/mp4">
+</video>
+<div id="overlay"></div>
+<div class="container">
+<h1 style="text-align:center">🍗 KUKU SHOP KV</h1>
+<p style="text-align:center">Till: 0746810403</p>
+
+<div id="paySection">
+<h3>1. Select Place of Delivery *</h3>
+<select id="mainPlace" onchange="handleMainPlace()">
+<option value="">-- Choose --</option>
+<option value="Kwa Vonza (KV)">Kwa Vonza (KV)</option>
+<option value="SEKU Main Campus">SEKU Main Campus</option>
+</select>
+<div id="kvDiv" style="display:none">
+<input id="plotName" placeholder="Plot NAME">
+<input id="plotNumber" placeholder="Plot NUMBER">
+</div>
+<div id="sekuDiv" style="display:none">
+<select id="sekuPlace" onchange="handleSekuPlace()">
+<option value="">-- Choose in SEKU --</option>
+<option value="Recreation Centre (RC)">Recreation Centre (RC)</option>
+<option value="Victoria Hostel">Victoria Hostel</option>
+</select>
+<div id="victoriaDiv" style="display:none">
+<input id="roomNumber" placeholder="Enter Room Number">
+</div>
+</div>
+</div>
+
+<h3 style="margin-top:15px">Menu</h3>
+<div id="menu"></div>
+
+<div id="paySection">
+<h3>Your Order - No: <span id="orderNoPreview">1011</span></h3>
+<div id="cartList"></div>
+<p>Subtotal: KES <span id="sub">0</span></p>
+<p>Delivery: KES 50</p>
+<h3>Total: KES <span id="tot">0</span></h3>
+<input id="phone" placeholder="M-Pesa Phone 07...">
+<button id="promptBtn" onclick="sendPrompt()" style="width:100%;background:green">SEND M-PESA PROMPT</button>
+<div id="mpesaDiv" style="display:none;margin-top:10px;border:2px dashed green;padding:10px">
+<p id="promptMsg" style="color:green;font-weight:bold"></p>
+<input id="mpesaCode" placeholder="M-Pesa Code (e.g UIF7I6CCHT)">
+<button onclick="payNow()" style="width:100%">CONFIRM PAYMENT</button>
+</div>
+<p id="status"></p>
+</div>
+</div>
+
+<script>
+let cart=[]
+let menuData=[
+{name:"Chips - 100/- + Free Salad",price:100,img:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=300"},
+{name:"Chips Masala - 150/- + Free Salad",price:150,img:"https://images.unsplash.com/photo-1585109649139-366815a0d713?w=300"},
+{name:"Smokies - 25/-",price:25,img:"https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=300"},
+{name:"1/4 Fried Chicken",price:170,img:"https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?w=300"},
+{name:"1/2 Chicken",price:340,img:"https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=300"},
+{name:"3/4 Chicken",price:510,img:"https://images.unsplash.com/photo-1562967914-608f82629710?w=300"},
+{name:"Full Chicken",price:650,img:"https://images.unsplash.com/photo-1512058564366-18510be2db19?w=300"}
+]
+let nextOrder=1011
+fetch('/api/orders').then(r=>r.json()).then(orders=>{
+ if(orders.length>0){ nextOrder=Math.max(...orders.map(o=>o.orderNumber))+1 }
+ document.getElementById('orderNoPreview').innerText=nextOrder
+})
+function renderMenu(){
+ let h=""
+ menuData.forEach((m,i)=>{
+   h+=`<div class="item"><img src="${m.img}"><div style="flex:1"><b>${m.name}</b><br>KES ${m.price}</div><button onclick="add(${i})">Add</button></div>`
+ })
+ document.getElementById('menu').innerHTML=h
+}
+function add(i){ cart.push(menuData[i]); updateCart() }
+function removeItem(index){ cart.splice(index,1); updateCart() }
+function updateCart(){
+ let sub=0
+ let grouped={}
+ cart.forEach(c=>{
+   if(!grouped[c.name]){ grouped[c.name]={count:0,price:c.price} }
+   grouped[c.name].count++; sub+=c.price
+ })
+ let list=""
+ cart.forEach((c,i)=>{
+   list+=`${c.name} - ${c.price} <button class="deleteBtn" onclick="removeItem(${i})">X Delete</button><br>`
+ })
+ list+="<hr><b>Summary:</b><br>"
+ for(let name in grouped){
+   let g=grouped[name]
+   list+=`${name} x${g.count} = KES ${g.price * g.count}<br>`
+ }
+ document.getElementById('cartList').innerHTML=list
+ document.getElementById('sub').innerText=sub
+ document.getElementById('tot').innerText=sub+50
+}
+function handleMainPlace(){
+ let v=document.getElementById('mainPlace').value
+ document.getElementById('kvDiv').style.display = v=='Kwa Vonza (KV)'? 'block':'none'
+ document.getElementById('sekuDiv').style.display = v=='SEKU Main Campus'? 'block':'none'
+}
+function handleSekuPlace(){
+ let v=document.getElementById('sekuPlace').value
+ document.getElementById('victoriaDiv').style.display = v=='Victoria Hostel'? 'block':'none'
+}
+function getFullPlace(){
+ let main=document.getElementById('mainPlace').value
+ if(!main) return ""
+ if(main=='Kwa Vonza (KV)'){
+   let pn=document.getElementById('plotName').value
+   let pnum=document.getElementById('plotNumber').value
+   if(!pn ||!pnum) return ""
+   return `${main} - Plot Name: ${pn}, Plot No: ${pnum}`
+ }
+ if(main=='SEKU Main Campus'){
+   let seku=document.getElementById('sekuPlace').value
+   if(!seku) return ""
+   if(seku=='Victoria Hostel'){
+     let room=document.getElementById('roomNumber').value
+     if(!room) return ""
+     return `${main} - ${seku} - Room: ${room}`
+   }
+   return `${main} - ${seku}`
+ }
+ return ""
+}
+async function sendPrompt(){
+ let phone=document.getElementById('phone').value
+ let total=document.getElementById('tot').innerText
+ let place=getFullPlace()
+ if(!place){ alert("Place of delivery must be filled!"); return }
+ if(!phone || phone.length<10){ alert("Enter Phone"); return }
+ if(cart.length==0){ alert("Add item"); return }
+ document.getElementById('mpesaDiv').style.display='block'
+ document.getElementById('promptMsg').innerText="Sending prompt KES "+total+" to "+phone+"..."
+ let res=await fetch('/api/mpesa_prompt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,total})})
+ let data=await res.json()
+ document.getElementById('promptMsg').innerText=data.message
+}
+async function payNow(){
+ let phone=document.getElementById('phone').value
+ let place=getFullPlace()
+ let mpesaCode=document.getElementById('mpesaCode').value
+ let total=document.getElementById('tot').innerText
+ if(!place){ alert("Place must be filled!"); return }
+ let res=await fetch('/api/pay',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,placeOfDelivery:place,cart,total:parseInt(total),mpesaCode})})
+ let data=await res.json()
+ if(res.ok){
+   document.getElementById('status').innerHTML=`<h2 style="color:green">🎉 Congratulation order ${data.order.orderNumber} received and is being worked on!</h2>`
+ } else { alert(data.error) }
+}
+renderMenu(); updateCart()
+</script>
+</body>
+</html>
