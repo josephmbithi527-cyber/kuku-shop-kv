@@ -85,6 +85,11 @@ def pay():
     orders.append(new_order)
     save_orders(orders)
     return jsonify({'order': new_order})
+        # VENDOR NOTIFICATION to 0746810403
+    try:
+        print(f"🔔 NEW ORDER #{order_num} KES {total} from {phone} Place:{place} Mpesa:{mpesa_code}", flush=True)
+    except:
+        pass
 
 @app.route('/api/orders')
 def get_orders(): return jsonify(load_orders()[::-1])
