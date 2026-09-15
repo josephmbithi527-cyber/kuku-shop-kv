@@ -1,40 +1,43 @@
 <!DOCTYPE html>
 <html>
-<head><title>Vendor - Kuku Orders</title>
+<head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vendor - Kuku Shop KV - 0746810403</title>
 <style>
-body{font-family:Arial;background:#f5f5f5;padding:20px}
-.order{background:white;padding:15px;margin:10px 0;border-radius:10px;box-shadow:0 2px 5px #0001;border-left:5px solid green}
-.new{border-left-color:red;animation:blink 1s infinite}
-@keyframes blink{50%{background:#ffe6e6}}
-button{background:green;color:white;border:none;padding:10px 20px;border-radius:5px}
+body{font-family:Arial;max-width:600px;margin:auto;padding:20px;background:#f0f0f0}
+.order{background:white;padding:15px;border-radius:10px;margin:10px 0;border-left:6px solid green;box-shadow:0 2px 4px #0002}
+.new{border-left-color:red;animation:flash 1s infinite}
+@keyframes flash{50%{background:#ffcccc}}
+h1{color:green}
+button{background:green;color:white;border:none;padding:12px 20px;border-radius:6px;font-size:16px;width:100%}
 </style>
 </head>
 <body>
-<h1>🐔 KUKU ORDERS - Live</h1>
-<p>Keep this page open - it beeps for new orders!</p>
-<div id="orders">Loading...</div>
-<audio id="beep" src="https://www.soundjay.com/buttons/sounds/beep-07a.mp3" preload="auto"></audio>
+<h1>🐔 Kuku Shop KV - Vendor - 0746810403</h1>
+<p><b>KEEP THIS PAGE OPEN!</b> It will BEEP + ALERT for new orders. Auto refresh every 5 sec.</p>
+<div id="orders">Loading orders...</div>
+<audio id="beep" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
 <script>
 let lastCount=0;
 async function load(){
   let res=await fetch('/api/orders');
-  let data=await res.json();
-  let div=document.getElementById('orders');
-  div.innerHTML='';
-  if(data.length>lastCount && lastCount>0){
-    document.getElementById('beep').play();
-    if(Notification) new Notification('NEW KUKU ORDER! KES '+data[data.length-1].total);
-    alert('🔔 NEW ORDER! KES '+data[data.length-1].total+' From '+data[data.length-1].phone);
+  let orders=await res.json();
+  let html='';
+  if(orders.length>lastCount && lastCount>0){
+    document.getElementById('beep').play().catch(()=>{});
+    alert('🔔 NEW ORDER! #'+orders[orders.length-1].orderNumber+' KES '+orders[orders.length-1].total+' Phone:'+orders[orders.length-1].phone);
+    if(window.Notification && Notification.permission==='granted'){new Notification('NEW KUKU ORDER KES '+orders[orders.length-1].total);}
   }
-  lastCount=data.length;
-  data.reverse().forEach(o=>{
-    div.innerHTML+=`<div class="order ${o.status=='paid'?'new':''}"><b>ORDER #${o.orderNumber} - KES ${o.total}</b><br>📞 ${o.phone}<br>📍 ${o.placeOfDelivery}<br>💳 Mpesa: ${o.mpesaCode}<br>🛒 ${JSON.stringify(o.cart)}<br>⏰ ${o.time} - ${o.status}<br><button onclick="confirmOrder(${o.orderNumber})">Confirm Order</button></div>`;
+  lastCount=orders.length;
+  orders.slice().reverse().forEach(o=>{
+    html+=`<div class="order ${o.status=='paid'?'new':''}"><b>ORDER #${o.orderNumber}</b> - ${o.status.toUpperCase()}<br>📞 ${o.phone} | 💰 KES ${o.total}<br>📍 ${o.placeOfDelivery}<br>💳 Mpesa: ${o.mpesaCode}<br>🛒 ${JSON.stringify(o.cart)}<br>⏰ ${o.time}<br><br><button onclick="confirmOrder(${parseInt(o.orderNumber)})">✅ Confirm Order</button></div>`;
   });
+  if(orders.length==0) html='<p>No orders yet</p>';
+  document.getElementById('orders').innerHTML=html;
 }
 async function confirmOrder(n){await fetch('/api/confirm/'+n,{method:'POST'}); load();}
 setInterval(load,5000); load();
-if(Notification) Notification.requestPermission();
+if(window.Notification){Notification.requestPermission();}
 </script>
 </body>
 </html>
