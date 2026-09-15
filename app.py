@@ -22,7 +22,7 @@ def sitemap():
     return Response(xml, mimetype='application/xml')
 
 ORDERS_FILE = 'orders.json'
-ORDERS_FILE = 'orders.json'
+
 
 def load_orders():
     if not os.path.exists(ORDERS_FILE): return []
@@ -107,18 +107,6 @@ def manifest_file():
 @app.route('/sw.js')
 def sw_file():
     return send_from_directory('static', 'sw.js')
-
-@app.route('/robots.txt')
-def robots():
-    return "User-agent: *\nAllow: /\nSitemap: https://kukushop-kv.onrender.com/sitemap.xml", 200, {'Content-Type': 'text/plain'}
-
-@app.route('/sitemap.xml')
-def sitemap():
-    xml = """<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>https://kukushop-kv.onrender.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
-</urlset>"""
-    return xml, 200, {'Content-Type': 'application/xml'}
 
 if __name__ == '__main__':
     import os
